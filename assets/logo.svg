@@ -1,0 +1,22 @@
+<svg width="400" height="120" viewBox="0 0 400 120" xmlns="http://www.w3.org/2000/svg">
+  
+  <g transform="translate(20, 10)">
+    <ellipse cx="40" cy="32" rx="24" ry="26" fill="#eb5d01"></ellipse>
+    <path d="M28 48 L28 56 Q28 60 32 60 L48 60 Q52 60 52 56 L52 48" fill="#eb5d01"></path>
+    <rect x="30" y="60" width="20" height="4" rx="2" fill="#b23a04"></rect>
+    <rect x="32" y="66" width="16" height="4" rx="2" fill="#b23a04"></rect>
+    <rect x="35" y="72" width="10" height="3" rx="1.5" fill="#b23a04"></rect>
+    <path d="M34 36 Q40 20 46 36" stroke="white" stroke-width="2" fill="none" stroke-linecap="round" opacity="0.7"></path>
+    <line x1="40" y1="28" x2="40" y2="36" stroke="white" stroke-width="1.5" opacity="0.4"></line>
+  </g>
+
+  
+  <text x="120" y="58" font-family="&#39;Outfit&#39;, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-weight="700" font-size="52" fill="#ffffff" letter-spacing="-0.5">
+    Lingu<tspan fill="#eb5d01">Ed</tspan>
+  </text>
+
+  
+  <text x="122" y="82" font-family="&#39;Outfit&#39;, &#39;Helvetica Neue&#39;, Arial, sans-serif" font-weight="500" font-size="14" fill="rgba(255,255,255,0.45)" letter-spacing="3">
+    PREPARE · TEST · SCORE
+  </text>
+</svg>
