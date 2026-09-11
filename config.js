@@ -3,7 +3,7 @@ window.LINGUED_CONFIG = {
   DEMO_MODE: false,
 
   // Paste the deployed Google Apps Script Web App URL here.
-  APPS_SCRIPT_URL: 'PASTE_YOUR_WEB_APP_URL_HERE',
+  APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbyRdPgg6KemcdmIfv5j6Tkmlc7Yh0wu_9rzAsvwMZA521bviE42XIohuKUIzAsEAMMR/exec',
 
   // Optional campaign/source label appended to every lead.
   FORM_VERSION: 'landing-v1'
