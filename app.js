@@ -237,41 +237,13 @@
     </div>`;
   }
 
-  function availableDates() {
-    const weekdays = CONFIG.AVAILABLE_WEEKDAYS || [2, 4, 6];
-    const dates = [];
-    const today = new Date();
-    today.setHours(12, 0, 0, 0);
-    for (let offset = 1; offset <= (CONFIG.BOOKING_WINDOW_DAYS || 21) && dates.length < 6; offset += 1) {
-      const date = new Date(today);
-      date.setDate(today.getDate() + offset);
-      if (weekdays.includes(date.getDay())) dates.push(date);
-    }
-    return dates;
-  }
-
-  function slotPicker() {
-    const times = CONFIG.AVAILABLE_TIMES || ['09:00', '11:00', '14:00'];
-    return `<div class="slot-picker">${availableDates().map(date => {
-      const key = date.toISOString().slice(0, 10);
-      const label = date.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      return `<div class="slot-day"><h3>${escapeHtml(label)}</h3><div class="slot-times">${times.map(time => {
-        const value = `${key}T${time}`;
-        const display = new Date(value).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-        return `<button type="button" class="slot${state.dateTime === value ? ' selected' : ''}" data-choice-key="dateTime" data-choice-value="${value}" aria-pressed="${state.dateTime === value}">${display}</button>`;
-      }).join('')}</div></div>`;
-    }).join('')}</div>`;
-  }
-
   function step2() {
     return `<div class="form-panel">
       <button type="button" class="back-button" data-back>← Back</button>
-      <div class="step-copy"><h2 id="assessmentTitle">Choose an available time</h2><p>Only currently offered assessment times are shown.</p></div>
+      <div class="step-copy"><h2 id="assessmentTitle">How would you like to attend?</h2><p>Save your details, then choose a real available time directly from our Google Calendar.</p></div>
       ${errorBox()}
       <div class="field-group"><span class="field-label">Online or in person?</span>${formatButtons()}</div>
-      <div class="field-group"><span class="field-label">Available appointments · ${escapeHtml(CONFIG.BOOKING_TIME_ZONE_LABEL || 'Kigali time (CAT)')}</span>${slotPicker()}</div>
-      ${CONFIG.BOOKING_URL ? `<a class="calendar-link" href="${escapeHtml(CONFIG.BOOKING_URL)}" target="_blank" rel="noopener">View live calendar availability ↗</a>` : '<p class="schedule-preview-note">Comparison preview: replace the example schedule in <code>config.js</code> with LinguEd’s real availability before launch.</p>'}
-      <button class="btn btn-primary continue-button submit-button" type="button" data-submit>Book My Free Assessment</button>
+      <button class="btn btn-primary continue-button submit-button" type="button" data-submit>Continue to Live Calendar <span aria-hidden="true">→</span></button>
       <p class="paid-note">The assessment is free. Preparation is optional and paid separately.</p>
     </div>`;
   }
@@ -280,16 +252,22 @@
     const firstName = (state.fullName || '').trim().split(/\s+/)[0] || 'there';
     const test = state.testType === 'Other' ? state.otherTest : (state.testType === 'Not sure yet' ? '' : (state.testType || ''));
     const storageNote = CONFIG.DEMO_MODE ? '<p class="submission-note">Demo mode is on: this test submission was saved only in this browser. Connect Google Sheets before publishing.</p>' : '';
+    const calendar = CONFIG.BOOKING_EMBED_URL ? `
+      <div class="calendar-booking-wrap">
+        <p class="calendar-alert"><strong>Your booking is not complete yet.</strong> Select an available time below and finish Google’s confirmation.</p>
+        <iframe class="calendar-embed" src="${escapeHtml(CONFIG.BOOKING_EMBED_URL)}" title="Book a LinguEd Test Readiness Assessment" loading="eager" frameborder="0"></iframe>
+        <a class="calendar-open-link" href="${escapeHtml(CONFIG.BOOKING_URL || CONFIG.BOOKING_EMBED_URL)}" target="_blank" rel="noopener">Open the booking calendar in a new tab ↗</a>
+      </div>` : '';
     return `
       <div class="success-header">
         <span class="success-wordmark"><span>Lingu</span><span class="accent">Ed</span></span>
         <button class="icon-button" type="button" data-close-success aria-label="Close">✕</button>
       </div>
-      <div class="success-content">
-        <div class="success-icon">✓</div>
-        <h1 id="assessmentTitle">Your assessment request has been received.</h1>
-        <p>Thank you, ${escapeHtml(firstName)}. We've received your request for a free ${test ? escapeHtml(test) + ' ' : ''}Test Readiness Assessment.</p>
-        <p>Our team will confirm your slot by WhatsApp. Please watch for a message from LinguEd Center.</p>
+      <div class="success-content booking-content">
+        <div class="success-icon">2</div>
+        <h1 id="assessmentTitle">Now choose your free assessment time.</h1>
+        <p>Thanks, ${escapeHtml(firstName)}. Your details are saved. Select a ${test ? escapeHtml(test) + ' ' : ''}assessment time from the live calendar to complete your booking.</p>
+        ${calendar}
         ${storageNote}
         <button class="btn back-home" type="button" data-close-success>Back to homepage</button>
       </div>`;
@@ -390,8 +368,6 @@
       req(!!state.bookingFor, 'Please choose who the assessment is for.');
     } else if (step === 2) {
       req(!!state.format, 'Please choose your preferred assessment format.');
-      req(!!state.dateTime, 'Please choose an available assessment time.', 'dateTime');
-      if (state.dateTime) req(new Date(state.dateTime).getTime() > Date.now(), 'Please choose a future date and time.', 'dateTime');
     }
     return validationResult(messages, fields);
   }
@@ -469,7 +445,7 @@
       sponsorWhatsapp: '',
       canJoinDebrief: '',
       assessmentFormat: state.format || '',
-      preferredDateTime: state.dateTime || '',
+      preferredDateTime: CONFIG.BOOKING_URL ? 'Google Calendar booking page' : (state.dateTime || ''),
       ...campaignData()
     };
   }

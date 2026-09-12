@@ -47,7 +47,7 @@ In demo mode, successful form submissions are stored in browser localStorage und
 
 ## Appointment availability
 
-The comparison branch uses example Tuesday, Thursday, and Saturday slots. Before launch, replace `AVAILABLE_WEEKDAYS` and `AVAILABLE_TIMES` in `config.js` with LinguEd's real schedule. Set `BOOKING_URL` to a Google Calendar Appointment Schedule or Cal.com booking page if live conflict checking is required.
+The final booking step uses LinguEd's Google Calendar Appointment Schedule. Google Calendar controls real availability, blocks conflicts, and confirms the selected appointment. `BOOKING_URL` and `BOOKING_EMBED_URL` are configured in `config.js`.
 
 ## Lead qualification
 

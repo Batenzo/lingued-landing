@@ -8,14 +8,11 @@ window.LINGUED_CONFIG = {
   // Optional campaign/source label appended to every lead.
   FORM_VERSION: 'conversion-redesign-v1',
 
-  // Comparison-branch availability. Replace these values with LinguEd's real schedule before merging.
+  // The booking page is managed in Google Calendar, which controls real availability and conflicts.
   BOOKING_TIME_ZONE: 'Africa/Kigali',
   BOOKING_TIME_ZONE_LABEL: 'Kigali time (CAT)',
-  BOOKING_WINDOW_DAYS: 21,
-  AVAILABLE_WEEKDAYS: [2, 4, 6], // Tuesday, Thursday, Saturday
-  AVAILABLE_TIMES: ['09:00', '11:00', '14:00'],
 
-  // Optional: paste a Google Calendar Appointment Schedule or Cal.com booking URL here.
-  // When set, the confirmation screen also links to the live booking calendar.
-  BOOKING_URL: ''
+  // Google Calendar Appointment Schedule links supplied by LinguEd.
+  BOOKING_URL: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vOQm9ODHFxIkMUjdvDVNDHozBQlYeKFVEILBWgY7s5VyDxWWJuWyfx7l5tIkLz2_4lF9Ad_oR',
+  BOOKING_EMBED_URL: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vOQm9ODHFxIkMUjdvDVNDHozBQlYeKFVEILBWgY7s5VyDxWWJuWyfx7l5tIkLz2_4lF9Ad_oR?gv=true'
 };
