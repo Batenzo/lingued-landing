@@ -572,13 +572,9 @@
         await new Promise(resolve => setTimeout(resolve, 250));
       } else {
         if (!CONFIG.APPS_SCRIPT_URL) throw new Error('Google Sheets endpoint is not configured.');
-        // text/plain avoids a CORS preflight. Apps Script stores the body as JSON.
-        await fetch(CONFIG.APPS_SCRIPT_URL, {
-          method: 'POST',
-          mode: 'no-cors',
-          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-          body: JSON.stringify(payload)
-        });
+        // GET with payload as a query param avoids the Apps Script POST redirect bug.
+        const url = CONFIG.APPS_SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
+        await fetch(url, { method: 'GET', mode: 'no-cors' });
       }
       state.submitted = true;
       renderModal();

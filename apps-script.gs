@@ -10,7 +10,7 @@
  * 6. Copy the Web App URL into config.js and set DEMO_MODE to false.
  */
 
-const SPREADSHEET_ID = 'PASTE_YOUR_GOOGLE_SHEET_ID_HERE';
+const SPREADSHEET_ID = '';
 const SHEET_NAME = 'Leads';
 
 const HEADERS = [
@@ -24,10 +24,45 @@ const HEADERS = [
   'Referrer', 'Landing URL', 'Form Version'
 ];
 
-function doGet() {
-  return ContentService
-    .createTextOutput(JSON.stringify({ ok: true, service: 'LinguEd lead collector' }))
-    .setMimeType(ContentService.MimeType.JSON);
+function doGet(e) {
+  // Health check when no data param present.
+  if (!e || !e.parameter || !e.parameter.data) {
+    return json_({ ok: true, service: 'LinguEd lead collector' });
+  }
+  // Lead submission arrives as GET with ?data=<JSON> to avoid the Apps Script POST redirect bug.
+  try {
+    const payload = JSON.parse(e.parameter.data);
+    validatePayload_(payload);
+
+    const lock = LockService.getScriptLock();
+    lock.waitLock(10000);
+    try {
+      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
+      let sheet = ss.getSheetByName(SHEET_NAME);
+      if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
+      ensureHeaders_(sheet);
+
+      const row = [
+        payload.submittedAt || new Date().toISOString(),
+        safe_(payload.leadStatus), number_(payload.leadScore), safe_(payload.qualificationReasons),
+        safe_(payload.fullName), safe_(payload.whatsapp), safe_(payload.email), safe_(payload.bookingFor),
+        safe_(payload.testType), safe_(payload.testTypeRaw), safe_(payload.reason), safe_(payload.reasonRaw), safe_(payload.timeline),
+        safe_(payload.takenBefore), safe_(payload.priorScore), safe_(payload.targetScore), safe_(payload.bookedOfficial), safe_(payload.testDate),
+        safe_(payload.decisionMaker), safe_(payload.funder), safe_(payload.openness), safe_(payload.sponsorWhatsapp), safe_(payload.canJoinDebrief),
+        safe_(payload.assessmentFormat), safe_(payload.preferredDateTime),
+        safe_(payload.utmSource), safe_(payload.utmMedium), safe_(payload.utmCampaign), safe_(payload.utmContent), safe_(payload.utmTerm),
+        safe_(payload.referrer), safe_(payload.landingUrl), safe_(payload.formVersion)
+      ];
+      sheet.appendRow(row);
+      applyLeadFormatting_(sheet, sheet.getLastRow());
+    } finally {
+      lock.releaseLock();
+    }
+    return json_({ ok: true });
+  } catch (err) {
+    console.error(err);
+    return json_({ ok: false, error: String(err.message || err) });
+  }
 }
 
 function doPost(e) {
