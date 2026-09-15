@@ -105,7 +105,7 @@ function doPost(e) {
 function validatePayload_(p) {
   if (!p.fullName || String(p.fullName).trim().length < 2) throw new Error('Missing full name');
   if (!p.whatsapp || String(p.whatsapp).replace(/\D/g, '').length < 9) throw new Error('Invalid WhatsApp number');
-  if (!p.email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(p.email))) throw new Error('Invalid email');
+  if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(p.email))) throw new Error('Invalid email');
   if (!p.testType || !p.timeline || !p.assessmentFormat || !p.preferredDateTime) throw new Error('Missing required lead fields');
 }
 
