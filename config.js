@@ -13,6 +13,6 @@ window.LINGUED_CONFIG = {
   BOOKING_TIME_ZONE_LABEL: 'Kigali time (CAT)',
 
   // Google Calendar Appointment Schedule links supplied by LinguEd.
-  BOOKING_URL: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vOQm9ODHFxIkMUjdvDVNDHozBQlYeKFVEILBWgY7s5VyDxWWJuWyfx7l5tIkLz2_4lF9Ad_oR',
-  BOOKING_EMBED_URL: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ1vOQm9ODHFxIkMUjdvDVNDHozBQlYeKFVEILBWgY7s5VyDxWWJuWyfx7l5tIkLz2_4lF9Ad_oR?gv=true'
+  BOOKING_URL: 'https://calendar.app.google/hQBidqNocALWPWoZ7',
+  BOOKING_EMBED_URL: 'https://calendar.google.com/calendar/appointments/schedules/AcZssZ0DF-R_4hD4G56p-fPNByZLgehvLEF-rPF80wVg7oZga3N5luF2F0z37mIs7fRAeFfOL2xOPjIX?gv=true'
 };
