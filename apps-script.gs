@@ -81,6 +81,28 @@ function testNotionConnection() {
   return result;
 }
 
+function testLeadSubmission() {
+  const testPayload = {
+    submittedAt: new Date().toISOString(),
+    fullName: 'LinguEd Diagnostic Test',
+    whatsapp: '+250700000000',
+    email: '',
+    bookingFor: 'Myself',
+    testType: 'TOEFL',
+    targetScore: 'Diagnostic only',
+    timeline: 'In 1–3 months',
+    assessmentFormat: 'Online via Google Meet',
+    leadStatus: 'WARM',
+    leadScore: 50,
+    utmSource: 'Apps Script diagnostic'
+  };
+
+  const response = handleLead_(testPayload);
+  const result = JSON.parse(response.getContent());
+  console.log(JSON.stringify(result));
+  return result;
+}
+
 function getDataSourceId_(token) {
   const cache = CacheService.getScriptCache();
   const cached = cache.get('NOTION_DATA_SOURCE_ID');
