@@ -251,7 +251,7 @@
   function successView() {
     const firstName = (state.fullName || '').trim().split(/\s+/)[0] || 'there';
     const test = state.testType === 'Other' ? state.otherTest : (state.testType === 'Not sure yet' ? '' : (state.testType || ''));
-    const storageNote = CONFIG.DEMO_MODE ? '<p class="submission-note">Demo mode is on: this test submission was saved only in this browser. Connect Google Sheets before publishing.</p>' : '';
+    const storageNote = CONFIG.DEMO_MODE ? '<p class="submission-note">Demo mode is on: this test submission was saved only in this browser. Connect Notion before publishing.</p>' : '';
     const calendar = CONFIG.BOOKING_EMBED_URL ? `
       <div class="calendar-booking-wrap">
         <p class="calendar-alert"><strong>Your booking is not complete yet.</strong> Select an available time below and finish Google’s confirmation.</p>
@@ -474,7 +474,7 @@
         localStorage.setItem('lingued_demo_leads', JSON.stringify(stored.slice(-50)));
         await new Promise(resolve => setTimeout(resolve, 250));
       } else {
-        if (!CONFIG.APPS_SCRIPT_URL) throw new Error('Google Sheets endpoint is not configured.');
+        if (!CONFIG.APPS_SCRIPT_URL) throw new Error('The Notion lead endpoint is not configured.');
         // GET with payload as a query param avoids the Apps Script POST redirect bug.
         const url = CONFIG.APPS_SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
         await fetch(url, { method: 'GET', mode: 'no-cors' });

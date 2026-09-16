@@ -12,8 +12,8 @@ This is a clean responsive rebuild of the Claude design export. It does **not** 
 - Lead scoring: HOT / WARM / NURTURE / EARLY-STAGE.
 - UTM/referrer/landing URL capture.
 - Honeypot + minimum interaction-time spam trap.
-- Google Apps Script collector that appends submissions to Google Sheets.
-- Demo mode for testing before Google Sheets is connected.
+- Google Apps Script collector that securely saves submissions to Notion.
+- Demo mode for testing before Notion is connected.
 - Original embedded LinguEd assets extracted from the Claude export.
 - Outcome-led proof gallery with enlarged score reports, testimonials, and Google reviews.
 - Continuous proof scrolling that pauses on hover, touch/click, keyboard focus, and while an image is enlarged.
@@ -32,18 +32,18 @@ In demo mode, successful form submissions are stored in browser localStorage und
 
 `lingued_demo_leads`
 
-## Connect Google Sheets
+## Connect Notion
 
-1. Create a Google Sheet for leads.
-2. Open **Extensions → Apps Script**.
-3. Paste the contents of `apps-script.gs`.
-4. Replace `PASTE_YOUR_GOOGLE_SHEET_ID_HERE` with the ID from the Sheet URL.
-5. Deploy as a **Web app** that executes as you and can be accessed by anyone.
-6. Copy the Web App URL.
-7. In `config.js`:
-   - set `DEMO_MODE: false`
-   - paste the URL into `APPS_SCRIPT_URL`.
-8. Submit a test lead and confirm that a row appears in the `Leads` tab.
+1. Create a Notion integration with **Read content** and **Insert content** access and connect it to the `Test Readiness Leads` database.
+2. Open the existing Google Apps Script project and replace its code with `apps-script.gs`.
+3. In **Project Settings → Script Properties**, add `NOTION_TOKEN` with the integration secret as its value.
+4. Run `testNotionConnection` once from the Apps Script editor and approve the requested permissions. Its execution log should show `ok: true` and the database property names.
+5. Deploy a new Web app version that executes as you and can be accessed by anyone.
+6. Copy its `/exec` URL into `APPS_SCRIPT_URL` in `config.js` and keep `DEMO_MODE: false`.
+7. Open the `/exec` URL directly. It should report `configured: true`.
+8. Submit a test lead and confirm that a new page appears in the Notion database.
+
+The database ID is already configured in `apps-script.gs`. The collector discovers its current Notion data-source ID automatically. Never place the Notion token in this repository or in browser-side code.
 
 ## Appointment availability
 

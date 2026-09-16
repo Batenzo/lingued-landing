@@ -1,145 +1,173 @@
 /**
- * LinguEd lead collector for Google Sheets.
+ * LinguEd Notion-only lead collector.
  *
  * SETUP
- * 1. Create a Google Sheet and copy its spreadsheet ID from the URL.
- * 2. Replace SPREADSHEET_ID below.
- * 3. Extensions > Apps Script, paste this file, save.
- * 4. Deploy > New deployment > Web app.
- * 5. Execute as: Me. Who has access: Anyone.
- * 6. Copy the Web App URL into config.js and set DEMO_MODE to false.
+ * 1. Give the Notion integration Read content and Insert content capabilities.
+ * 2. In Apps Script > Project Settings > Script Properties, add:
+ *      NOTION_TOKEN = your Notion integration secret
+ * 3. Connect the integration to the Notion database.
+ * 4. Deploy as a Web app: Execute as Me; Who has access: Anyone.
+ * 5. Keep the resulting /exec URL in config.js as APPS_SCRIPT_URL.
  */
 
-const SPREADSHEET_ID = '';
-const SHEET_NAME = 'Leads';
-
-const HEADERS = [
-  'Submitted At', 'Lead Status', 'Lead Score', 'Qualification Reasons',
-  'Full Name', 'WhatsApp', 'Email', 'Booking For',
-  'Test', 'Test Raw', 'Reason', 'Reason Raw', 'Timeline',
-  'Taken Before', 'Prior Score', 'Target Score', 'Official Test Booked', 'Official Test Date',
-  'Decision Maker', 'Funder', 'Openness', 'Sponsor WhatsApp', 'Sponsor Debrief',
-  'Assessment Format', 'Preferred Date/Time',
-  'UTM Source', 'UTM Medium', 'UTM Campaign', 'UTM Content', 'UTM Term',
-  'Referrer', 'Landing URL', 'Form Version'
-];
+const NOTION_DATABASE_ID = '3ddc2bf00bc88034b3a6ec14a802b187';
+const NOTION_VERSION = '2025-09-03';
 
 function doGet(e) {
-  // Health check when no data param present.
   if (!e || !e.parameter || !e.parameter.data) {
-    return json_({ ok: true, service: 'LinguEd lead collector' });
+    return json_({ ok: true, service: 'LinguEd Notion lead collector', configured: Boolean(getNotionToken_()) });
   }
-  // Lead submission arrives as GET with ?data=<JSON> to avoid the Apps Script POST redirect bug.
   try {
-    const payload = JSON.parse(e.parameter.data);
-    validatePayload_(payload);
-
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    try {
-      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      let sheet = ss.getSheetByName(SHEET_NAME);
-      if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-      ensureHeaders_(sheet);
-
-      const row = [
-        payload.submittedAt || new Date().toISOString(),
-        safe_(payload.leadStatus), number_(payload.leadScore), safe_(payload.qualificationReasons),
-        safe_(payload.fullName), safe_(payload.whatsapp), safe_(payload.email), safe_(payload.bookingFor),
-        safe_(payload.testType), safe_(payload.testTypeRaw), safe_(payload.reason), safe_(payload.reasonRaw), safe_(payload.timeline),
-        safe_(payload.takenBefore), safe_(payload.priorScore), safe_(payload.targetScore), safe_(payload.bookedOfficial), safe_(payload.testDate),
-        safe_(payload.decisionMaker), safe_(payload.funder), safe_(payload.openness), safe_(payload.sponsorWhatsapp), safe_(payload.canJoinDebrief),
-        safe_(payload.assessmentFormat), safe_(payload.preferredDateTime),
-        safe_(payload.utmSource), safe_(payload.utmMedium), safe_(payload.utmCampaign), safe_(payload.utmContent), safe_(payload.utmTerm),
-        safe_(payload.referrer), safe_(payload.landingUrl), safe_(payload.formVersion)
-      ];
-      sheet.appendRow(row);
-      applyLeadFormatting_(sheet, sheet.getLastRow());
-    } finally {
-      lock.releaseLock();
-    }
-    return json_({ ok: true });
+    return handleLead_(JSON.parse(e.parameter.data));
   } catch (err) {
-    console.error(err);
-    return json_({ ok: false, error: String(err.message || err) });
+    console.error(err && err.stack ? err.stack : err);
+    return json_({ ok: false, error: 'The lead could not be saved.' });
   }
 }
 
 function doPost(e) {
   try {
-    const payload = JSON.parse((e && e.postData && e.postData.contents) || '{}');
-    validatePayload_(payload);
-
-    const lock = LockService.getScriptLock();
-    lock.waitLock(10000);
-    try {
-      const ss = SpreadsheetApp.openById(SPREADSHEET_ID);
-      let sheet = ss.getSheetByName(SHEET_NAME);
-      if (!sheet) sheet = ss.insertSheet(SHEET_NAME);
-      ensureHeaders_(sheet);
-
-      const row = [
-        payload.submittedAt || new Date().toISOString(),
-        safe_(payload.leadStatus), number_(payload.leadScore), safe_(payload.qualificationReasons),
-        safe_(payload.fullName), safe_(payload.whatsapp), safe_(payload.email), safe_(payload.bookingFor),
-        safe_(payload.testType), safe_(payload.testTypeRaw), safe_(payload.reason), safe_(payload.reasonRaw), safe_(payload.timeline),
-        safe_(payload.takenBefore), safe_(payload.priorScore), safe_(payload.targetScore), safe_(payload.bookedOfficial), safe_(payload.testDate),
-        safe_(payload.decisionMaker), safe_(payload.funder), safe_(payload.openness), safe_(payload.sponsorWhatsapp), safe_(payload.canJoinDebrief),
-        safe_(payload.assessmentFormat), safe_(payload.preferredDateTime),
-        safe_(payload.utmSource), safe_(payload.utmMedium), safe_(payload.utmCampaign), safe_(payload.utmContent), safe_(payload.utmTerm),
-        safe_(payload.referrer), safe_(payload.landingUrl), safe_(payload.formVersion)
-      ];
-      sheet.appendRow(row);
-      applyLeadFormatting_(sheet, sheet.getLastRow());
-    } finally {
-      lock.releaseLock();
-    }
-
-    return json_({ ok: true });
+    return handleLead_(JSON.parse((e && e.postData && e.postData.contents) || '{}'));
   } catch (err) {
-    console.error(err);
-    return json_({ ok: false, error: String(err.message || err) });
+    console.error(err && err.stack ? err.stack : err);
+    return json_({ ok: false, error: 'The lead could not be saved.' });
   }
 }
 
-function validatePayload_(p) {
-  if (!p.fullName || String(p.fullName).trim().length < 2) throw new Error('Missing full name');
-  if (!p.whatsapp || String(p.whatsapp).replace(/\D/g, '').length < 9) throw new Error('Invalid WhatsApp number');
-  if (p.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(p.email))) throw new Error('Invalid email');
-  if (!p.testType || !p.timeline || !p.assessmentFormat || !p.preferredDateTime) throw new Error('Missing required lead fields');
+function handleLead_(payload) {
+  validatePayload_(payload);
+  const token = getNotionToken_();
+  if (!token) throw new Error('Missing NOTION_TOKEN Script Property.');
+
+  const dataSourceId = getDataSourceId_(token);
+  const dataSource = notionRequest_('get', '/v1/data_sources/' + dataSourceId, token);
+  const schema = dataSource.properties || {};
+  const properties = {};
+
+  addProperty_(properties, schema, 'Name', payload.fullName);
+  addProperty_(properties, schema, 'Submitted', payload.submittedAt || new Date().toISOString());
+  addProperty_(properties, schema, 'WhatsApp', payload.whatsapp);
+  addProperty_(properties, schema, 'Email', payload.email);
+  addProperty_(properties, schema, 'Test', payload.testType);
+  addProperty_(properties, schema, 'Target Score', payload.targetScore);
+  addProperty_(properties, schema, 'Deadline', payload.timeline);
+  addProperty_(properties, schema, 'Booking For', payload.bookingFor);
+  addProperty_(properties, schema, 'Assessment Format', payload.assessmentFormat);
+  addProperty_(properties, schema, 'Booking Stage', 'Calendar opened');
+  addProperty_(properties, schema, 'Lead Status', payload.leadStatus);
+  addProperty_(properties, schema, 'Lead Score', payload.leadScore);
+  addProperty_(properties, schema, 'Source', sourceLabel_(payload));
+
+  if (!properties.Name) throw new Error('The Notion database needs a title property named "Name".');
+
+  const page = notionRequest_('post', '/v1/pages', token, {
+    parent: { type: 'data_source_id', data_source_id: dataSourceId },
+    properties: properties
+  });
+  return json_({ ok: true, notionPageId: page.id });
 }
 
-function ensureHeaders_(sheet) {
-  if (sheet.getLastRow() === 0) {
-    sheet.getRange(1, 1, 1, HEADERS.length).setValues([HEADERS]);
-    sheet.setFrozenRows(1);
-    sheet.getRange(1, 1, 1, HEADERS.length).setFontWeight('bold');
-    sheet.autoResizeColumns(1, HEADERS.length);
-    return;
+function getNotionToken_() {
+  return PropertiesService.getScriptProperties().getProperty('NOTION_TOKEN') || '';
+}
+
+function testNotionConnection() {
+  const token = getNotionToken_();
+  if (!token) throw new Error('Missing NOTION_TOKEN Script Property.');
+  const dataSourceId = getDataSourceId_(token);
+  const dataSource = notionRequest_('get', '/v1/data_sources/' + dataSourceId, token);
+  const result = { ok: true, dataSourceId: dataSourceId, properties: Object.keys(dataSource.properties || {}) };
+  console.log(JSON.stringify(result));
+  return result;
+}
+
+function getDataSourceId_(token) {
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get('NOTION_DATA_SOURCE_ID');
+  if (cached) return cached;
+
+  const database = notionRequest_('get', '/v1/databases/' + NOTION_DATABASE_ID, token);
+  const sources = database.data_sources || [];
+  if (!sources.length || !sources[0].id) throw new Error('No data source was found in the connected Notion database.');
+
+  cache.put('NOTION_DATA_SOURCE_ID', sources[0].id, 21600);
+  return sources[0].id;
+}
+
+function notionRequest_(method, path, token, body) {
+  const options = {
+    method: method,
+    muteHttpExceptions: true,
+    headers: {
+      Authorization: 'Bearer ' + token,
+      'Notion-Version': NOTION_VERSION,
+      'Content-Type': 'application/json'
+    }
+  };
+  if (body) options.payload = JSON.stringify(body);
+
+  const response = UrlFetchApp.fetch('https://api.notion.com' + path, options);
+  const status = response.getResponseCode();
+  const text = response.getContentText();
+  let result = {};
+  try { result = text ? JSON.parse(text) : {}; } catch (_) { result = {}; }
+  if (status < 200 || status >= 300) {
+    throw new Error('Notion API ' + status + ': ' + (result.message || text || 'Unknown error'));
   }
-  const existing = sheet.getRange(1, 1, 1, HEADERS.length).getValues()[0];
-  if (existing.join('|') !== HEADERS.join('|')) {
-    throw new Error('Sheet headers do not match the expected LinguEd lead schema. Use a new sheet/tab or restore the headers.');
+  return result;
+}
+
+function addProperty_(output, schema, name, value) {
+  if (value === null || value === undefined || value === '') return;
+  const definition = schema[name];
+  if (!definition || !definition.type) return;
+
+  const stringValue = String(value);
+  switch (definition.type) {
+    case 'title':
+      output[name] = { title: [{ text: { content: stringValue.slice(0, 2000) } }] };
+      break;
+    case 'rich_text':
+      output[name] = { rich_text: [{ text: { content: stringValue.slice(0, 2000) } }] };
+      break;
+    case 'phone_number':
+      output[name] = { phone_number: stringValue };
+      break;
+    case 'email':
+      output[name] = { email: stringValue };
+      break;
+    case 'date':
+      output[name] = { date: { start: new Date(value).toISOString() } };
+      break;
+    case 'select':
+      output[name] = { select: { name: stringValue.slice(0, 100) } };
+      break;
+    case 'status':
+      output[name] = { status: { name: stringValue.slice(0, 100) } };
+      break;
+    case 'number':
+      output[name] = { number: Number(value) || 0 };
+      break;
+    case 'url':
+      output[name] = { url: stringValue };
+      break;
   }
 }
 
-function applyLeadFormatting_(sheet, row) {
-  const status = String(sheet.getRange(row, 2).getValue() || '');
-  const range = sheet.getRange(row, 1, 1, HEADERS.length);
-  if (status === 'HOT') range.setFontWeight('bold');
+function sourceLabel_(payload) {
+  const campaign = [payload.utmSource, payload.utmMedium, payload.utmCampaign].filter(Boolean).join(' / ');
+  if (campaign) return campaign;
+  if (payload.referrer) return payload.referrer;
+  return 'LinguEd website';
 }
 
-function safe_(value) {
-  const s = value == null ? '' : String(value);
-  // Prevent spreadsheet formula injection from public form inputs.
-  return /^[=+\-@]/.test(s) ? "'" + s : s;
+function validatePayload_(payload) {
+  if (!payload || !payload.fullName || String(payload.fullName).trim().length < 2) throw new Error('Missing name.');
+  if (!payload.whatsapp || String(payload.whatsapp).replace(/\D/g, '').length < 9) throw new Error('Invalid WhatsApp number.');
+  if (payload.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(String(payload.email))) throw new Error('Invalid email.');
+  if (!payload.testType || !payload.timeline || !payload.assessmentFormat) throw new Error('Missing required lead fields.');
 }
 
-function number_(value) {
-  const n = Number(value);
-  return Number.isFinite(n) ? n : 0;
-}
-
-function json_(obj) {
-  return ContentService.createTextOutput(JSON.stringify(obj)).setMimeType(ContentService.MimeType.JSON);
+function json_(object) {
+  return ContentService.createTextOutput(JSON.stringify(object)).setMimeType(ContentService.MimeType.JSON);
 }
