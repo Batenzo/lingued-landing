@@ -6,7 +6,7 @@
   const TIMELINE_OPTIONS = ['Within 30 days', 'In 1–3 months', 'In 3–6 months', 'More than 6 months from now', "I'm not sure yet"];
   const BOOKING_FOR_OPTIONS = ['Myself', 'My child', 'Someone else'];
   const FORMAT_DATA = [
-    { label: 'In-person at LinguEd Center, Kigali', helper: 'Recommended for students in Kigali.' },
+    { label: 'In-person at LinguEd Center in Kigali', helper: 'Recommended for students in Kigali.' },
     { label: 'Online via Google Meet', helper: 'Available depending on your test, location, and situation.' }
   ];
   const FAQ_DATA = [

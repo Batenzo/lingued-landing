@@ -162,10 +162,10 @@ function addProperty_(output, schema, name, value) {
       output[name] = { date: { start: new Date(value).toISOString() } };
       break;
     case 'select':
-      output[name] = { select: { name: stringValue.slice(0, 100) } };
+      output[name] = { select: { name: notionOptionName_(stringValue) } };
       break;
     case 'status':
-      output[name] = { status: { name: stringValue.slice(0, 100) } };
+      output[name] = { status: { name: notionOptionName_(stringValue) } };
       break;
     case 'number':
       output[name] = { number: Number(value) || 0 };
@@ -174,6 +174,10 @@ function addProperty_(output, schema, name, value) {
       output[name] = { url: stringValue };
       break;
   }
+}
+
+function notionOptionName_(value) {
+  return String(value).replace(/\s*,\s*/g, ' — ').slice(0, 100);
 }
 
 function sourceLabel_(payload) {
