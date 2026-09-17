@@ -60,8 +60,6 @@
     fullName: '', whatsapp: '', email: '', bookingFor: 'Myself',
     testType: null, otherTest: '', timeline: null, targetScore: '',
     format: null, dateTime: '',
-    website: '',
-    openedAt: Date.now(),
     submitted: false
   });
 
@@ -218,7 +216,6 @@
       <div class="field-group"><span class="field-label">Choose your test</span>${choiceButtons('testType', TEST_OPTIONS, 'grid')}${state.testType === 'Other' ? inputField({key:'otherTest',placeholder:'Which test?'}) : ''}</div>
       <div class="field-group"><label class="field-label" for="field-targetScore">Target score <span class="optional">Optional</span></label>${inputField({key:'targetScore',placeholder:'Example: IELTS 7.0 or TOEFL 90'})}</div>
       <div class="field-group"><span class="field-label">When do you need your score?</span>${choiceButtons('timeline', TIMELINE_OPTIONS)}</div>
-      <div class="honeypot" aria-hidden="true"><label>Website<input data-field="website" type="text" tabindex="-1" autocomplete="off" value="${escapeHtml(state.website)}" /></label></div>
       <button class="btn btn-primary continue-button" type="button" data-next>Continue <span aria-hidden="true">→</span></button>
     </div>`;
   }
@@ -454,13 +451,6 @@
     syncVisibleInputs();
     const result = validateStep(2);
     if (!result.ok) return showValidation(result);
-
-    // Honeypot + minimum interaction time. Silent success for obvious bots.
-    if (state.website || Date.now() - state.openedAt < 2500) {
-      state.submitted = true;
-      renderModal();
-      return;
-    }
 
     const button = content.querySelector('[data-submit]');
     button.disabled = true;
