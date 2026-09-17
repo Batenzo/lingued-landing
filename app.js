@@ -465,23 +465,50 @@
         await new Promise(resolve => setTimeout(resolve, 250));
       } else {
         if (!CONFIG.APPS_SCRIPT_URL) throw new Error('The Notion lead endpoint is not configured.');
-        // GET with payload as a query param avoids the Apps Script POST redirect bug.
-        const url = CONFIG.APPS_SCRIPT_URL + '?data=' + encodeURIComponent(JSON.stringify(payload));
-        await fetch(url, { method: 'GET', mode: 'no-cors' });
+        await submitLeadViaCallback(payload);
       }
       state.submitted = true;
       trackEvent('assessment_requested', { test: payload.testType, format: payload.assessmentFormat });
       renderModal();
     } catch (err) {
       button.disabled = false;
-      button.textContent = 'Book My Free Assessment';
+      button.textContent = 'Continue to Live Calendar →';
       const box = document.getElementById('formError');
       if (box) {
-        box.textContent = 'We could not submit your request. Please try again or contact LinguEd on WhatsApp.';
+        box.textContent = 'We could not save your details: ' + (err.message || 'Please try again or contact LinguEd on WhatsApp.');
         box.classList.add('visible');
       }
       console.error(err);
     }
+  }
+
+  function submitLeadViaCallback(payload) {
+    return new Promise((resolve, reject) => {
+      const callback = 'linguedLeadCallback_' + Date.now() + '_' + Math.random().toString(36).slice(2);
+      const script = document.createElement('script');
+      const timeout = window.setTimeout(() => finish(new Error('The server took too long to respond. Please try again.')), 45000);
+
+      function finish(error, result) {
+        window.clearTimeout(timeout);
+        delete window[callback];
+        script.remove();
+        if (error) reject(error);
+        else resolve(result);
+      }
+
+      window[callback] = result => {
+        if (!result || !result.ok || !result.notionPageId) {
+          finish(new Error(result && result.error ? result.error : 'Notion did not confirm the submission.'));
+          return;
+        }
+        finish(null, result);
+      };
+      script.onerror = () => finish(new Error('The lead service could not be reached. Please check your connection and try again.'));
+      script.src = CONFIG.APPS_SCRIPT_URL
+        + '?callback=' + encodeURIComponent(callback)
+        + '&data=' + encodeURIComponent(JSON.stringify(payload));
+      document.head.appendChild(script);
+    });
   }
 
   function openAssessment() {

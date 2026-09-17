@@ -14,20 +14,21 @@ const NOTION_DATABASE_ID = '3ddc2bf00bc88034b3a6ec14a802b187';
 const NOTION_VERSION = '2025-09-03';
 
 function doGet(e) {
+  const callback = e && e.parameter ? e.parameter.callback : '';
   if (!e || !e.parameter || !e.parameter.data) {
-    return json_({ ok: true, service: 'LinguEd Notion lead collector', configured: Boolean(getNotionToken_()) });
+    return respond_({ ok: true, service: 'LinguEd Notion lead collector', configured: Boolean(getNotionToken_()) }, callback);
   }
   try {
-    return handleLead_(JSON.parse(e.parameter.data));
+    return respond_(handleLead_(JSON.parse(e.parameter.data)), callback);
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
-    return json_({ ok: false, error: 'The lead could not be saved.' });
+    return respond_({ ok: false, error: String(err && err.message ? err.message : err).slice(0, 500) }, callback);
   }
 }
 
 function doPost(e) {
   try {
-    return handleLead_(JSON.parse((e && e.postData && e.postData.contents) || '{}'));
+    return json_(handleLead_(JSON.parse((e && e.postData && e.postData.contents) || '{}')));
   } catch (err) {
     console.error(err && err.stack ? err.stack : err);
     return json_({ ok: false, error: 'The lead could not be saved.' });
@@ -64,7 +65,7 @@ function handleLead_(payload) {
     parent: { type: 'data_source_id', data_source_id: dataSourceId },
     properties: properties
   });
-  return json_({ ok: true, notionPageId: page.id });
+  return { ok: true, notionPageId: page.id };
 }
 
 function getNotionToken_() {
@@ -97,8 +98,7 @@ function testLeadSubmission() {
     utmSource: 'Apps Script diagnostic'
   };
 
-  const response = handleLead_(testPayload);
-  const result = JSON.parse(response.getContent());
+  const result = handleLead_(testPayload);
   console.log(JSON.stringify(result));
   return result;
 }
@@ -192,4 +192,14 @@ function validatePayload_(payload) {
 
 function json_(object) {
   return ContentService.createTextOutput(JSON.stringify(object)).setMimeType(ContentService.MimeType.JSON);
+}
+
+function respond_(object, callback) {
+  if (!callback) return json_(object);
+  if (!/^[A-Za-z_$][0-9A-Za-z_$\.]{0,100}$/.test(callback)) {
+    return json_({ ok: false, error: 'Invalid callback.' });
+  }
+  return ContentService
+    .createTextOutput(callback + '(' + JSON.stringify(object) + ');')
+    .setMimeType(ContentService.MimeType.JAVASCRIPT);
 }
