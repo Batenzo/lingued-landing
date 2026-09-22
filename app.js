@@ -83,6 +83,7 @@
 
   function renderFaq() {
     const list = document.getElementById('faqList');
+    if (!list) return;
     list.innerHTML = FAQ_DATA.map((item, index) => `
       <div class="faq-item" data-faq="${index}">
         <button class="faq-question" type="button" aria-expanded="false">
@@ -101,6 +102,7 @@
 
   function setupProofAutoScroll() {
     const scroller = document.querySelector('.screenshot-scroller');
+    if (!scroller) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
     const originals = [...scroller.children];
     originals.forEach(item => {
@@ -522,6 +524,10 @@
   }
 
   function closeAssessment() {
+    if (window.location.pathname.replace(/\/+$/, '') === '/free-assessment') {
+      window.location.assign('/');
+      return;
+    }
     modal.classList.remove('open');
     modal.setAttribute('aria-hidden', 'true');
     document.body.classList.remove('modal-open');
@@ -545,13 +551,13 @@
     trackEvent('proof_opened', { caption: button.dataset.proofCaption });
     openProofLightbox(button);
   });
-  closeProofLightboxBtn.addEventListener('click', closeProofLightbox);
-  proofLightbox.addEventListener('click', e => {
+  closeProofLightboxBtn?.addEventListener('click', closeProofLightbox);
+  proofLightbox?.addEventListener('click', e => {
     if (e.target === proofLightbox) closeProofLightbox();
   });
   closeBtn.addEventListener('click', closeAssessment);
   document.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && proofLightbox.classList.contains('open')) {
+    if (e.key === 'Escape' && proofLightbox?.classList.contains('open')) {
       closeProofLightbox();
       return;
     }
@@ -562,4 +568,5 @@
 
   renderFaq();
   setupProofAutoScroll();
+  if (window.location.pathname.replace(/\/+$/, '') === '/free-assessment') openAssessment();
 })();

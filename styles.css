@@ -25,6 +25,9 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 body.modal-open { overflow: hidden; }
+.assessment-route { min-height: 100vh; background: var(--cream); }
+.assessment-route-backdrop { min-height: 100vh; display: grid; place-items: center; }
+.assessment-route-backdrop img { width: min(360px, 70vw); opacity: .12; }
 button, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 a { color: inherit; }
